@@ -8,6 +8,7 @@ import shapefile
 sf_path = sys.argv[1]  # path of BehrmannMeterGrid_WGS84_land.shp
 csv_path = sys.argv[2]  # path of AllSpeciesBirdLifeMaps2019.csv
 db_path = sys.argv[3]  # output file
+csv_match_path = sys.argv[4]
 
 sf = shapefile.Reader(sf_path)
 records = sf.shapeRecords()
@@ -23,6 +24,8 @@ cur.execute('''CREATE TABLE places
                (worldid integer PRIMARY KEY, west real, south real, east real, north real)''')
 cur.execute('''CREATE TABLE distributions
                (id integer PRIMARY KEY, species text, worldid integer)''')
+cur.execute('''CREATE TABLE sp_cls_map
+               (species text PRIMARY KEY, cls integer)''')
 
 for record in records:
     box = record.shape.bbox
@@ -34,6 +37,14 @@ with open(csv_path, 'r') as csvfile:
         if index == 0:
             continue
         cur.execute(f"INSERT INTO distributions VALUES ({int(row[1])}, \"{row[2]}\", {int(row[3])})")
+
+with open(csv_match_path, 'r') as csvfile:
+    reader = csv.reader(csvfile)
+    for index, row in enumerate(reader):
+        if index == 0:
+            continue
+        cur.execute(f"INSERT INTO sp_cls_map VALUES (\"{row[0]}\", {int(row[1])})")
+
 
 con.commit()
 con.close()
